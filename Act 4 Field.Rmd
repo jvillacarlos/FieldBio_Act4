@@ -1,0 +1,73 @@
+---
+title: "Act 4 Field"
+author: "Krissa Joy L. Tabornal"
+date: "10/4/2021"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+event <- read.csv("C:/Users/user/Desktop/UP/BIO 188 CLASS/event.csv")
+emof <- read.csv("C:/Users/user/Desktop/UP/BIO 188 CLASS/emof.csv")
+occurrence <- read.csv("C:/Users/user/Desktop/UP/BIO 188 CLASS/occurrence.csv")
+```
+
+```{r}
+newoccurrence <- occurrence %>%
+                  select(occurrenceID, organismQuantityType, scientificName, family, genus, order, individualCount)
+
+benthic <- emof %>%
+        filter(str_detect(measurementID, "benthic")) %>%
+        filter(!str_detect(measurementID, "T09")) %>%
+        filter(!str_detect(measurementID, "T10")) %>%
+        select(measurementID, measurementType, measurementValue) %>%
+  separate(col = measurementID, into = c("Location", "Transect", "Date", "Benthic", "Type"), sep = ":") 
+
+benthicfinal <- benthic %>%
+            select(Transect, measurementType, measurementValue) %>% mutate(cover = as.numeric(measurementValue)/100)
+
+livecoral <- benthicfinal %>%
+          filter(str_detect(measurementType, "Branching|Massive|Encrusting|Millepora| Submassive|Soft"), negate = TRUE)
+
+totalcover <-livecoral %>%
+              spread(key = Transect, value = cover) 
+
+totalc <-data.frame(colSums(totalcover[,-1&-2]))
+transect <- c("T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08")
+Totalcover <- c(0.3663, 0.6039, 0.5148, 0.0792, 0.0891, 0.5149, 0.2772, 0.3366)
+covertotal<-data.frame(transect, Totalcover)
+  
+fish <- newoccurrence %>%
+      filter(str_detect(occurrenceID, "fish"))
+
+fishfinal <- fish %>%
+  select(occurrenceID, organismQuantityType, scientificName, individualCount) %>%
+  separate(col = occurrenceID, into = c("Location", "Transect", "Date", "Benthic", "Species"), sep = ":") %>%
+  select(Transect, Species, organismQuantityType, individualCount)
+
+fishcount <- fishfinal %>%
+      spread(key = Transect, value = individualCount) %>%
+      mutate_if(is.integer, as.numeric) 
+
+fishtotal <- data.frame(colSums(Filter(is.numeric,fishcount), na.rm = TRUE))
+transects <- c("T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08")
+fishabundance <- c(286, 280, 488, 445, 248, 72, 36, 241)  
+totalfish <- data.frame(transects, fishabundance)
+
+coralfish <- data.frame(totalfish, covertotal)
+```
+
+% cover per transect
+```{r}
+ggplot()+ geom_col(data = benthicfinal, aes(x = Transect, y = cover, fill = measurementType), position = "fill") + labs(y = "Percent Cover", fill = "Type")
+
+ggplot()+ geom_col(data = livecoral, aes(x = Transect, y = cover, fill = measurementType), position = "fill") + labs(y = "Percent Cover", fill = "Type of Live Coral")
+
+ggplot(data = totalfish, aes(x = transects, y = fishabundance)) + geom_col() + labs (x = "Transect", y = "Fish Abundance")
+
+ggplot(data = covertotal, aes(x = transect, y = Totalcover)) + geom_col() + labs (x = "Transect", y = "Live Coral Cover")
+
+ggplot(data = coralfish, aes(x = Totalcover, y = fishabundance), fill = transect) + geom_point() + labs(x = "Live Coral Cover", y = "Fish Abundance")
+
+```
+
