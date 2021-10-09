@@ -6,10 +6,11 @@ output: pdf_document
 ---
 
 ```{r}
+
 library(tidyverse)
-event <- read.csv("C:/Users/user/Desktop/UP/BIO 188 CLASS/event.csv")
-emof <- read.csv("C:/Users/user/Desktop/UP/BIO 188 CLASS/emof.csv")
-occurrence <- read.csv("C:/Users/user/Desktop/UP/BIO 188 CLASS/occurrence.csv")
+event <- read_csv("D:/kaya/Documents/2 SY 2021-2022/1st Semester 2021-2022/Bio 115 - Field Biology/Laboratory/Wk 3/FieldBio_Act4/event.csv")
+emof <- read_csv("D:/kaya/Documents/2 SY 2021-2022/1st Semester 2021-2022/Bio 115 - Field Biology/Laboratory/Wk 3/FieldBio_Act4/emof.csv")
+occurrence <- read_csv("D:/kaya/Documents/2 SY 2021-2022/1st Semester 2021-2022/Bio 115 - Field Biology/Laboratory/Wk 3/FieldBio_Act4/occurrence.csv")
 ```
 
 ```{r}
@@ -32,7 +33,7 @@ livecoral <- benthicfinal %>%
 totalcover <-livecoral %>%
               spread(key = Transect, value = cover) 
 
-totalc <-data.frame(colSums(totalcover[,-1&-2]))
+
 transect <- c("T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08")
 Totalcover <- c(0.3663, 0.6039, 0.5148, 0.0792, 0.0891, 0.5149, 0.2772, 0.3366)
 covertotal<-data.frame(transect, Totalcover)
@@ -67,7 +68,44 @@ ggplot(data = totalfish, aes(x = transects, y = fishabundance)) + geom_col() + l
 
 ggplot(data = covertotal, aes(x = transect, y = Totalcover)) + geom_col() + labs (x = "Transect", y = "Live Coral Cover")
 
-ggplot(data = coralfish, aes(x = Totalcover, y = fishabundance), fill = transect) + geom_point() + labs(x = "Live Coral Cover", y = "Fish Abundance")
+ggplot(data = coralfish, aes(x = Totalcover, y = fishabundance), fill = transect) + geom_point(size = 4) + labs(x = "Live Coral Cover", y = "Fish Abundance") + theme_classic()
+```
+
+plankton biodiversity
+```{r}
+plankton <- newoccurrence %>%
+      filter(str_detect(occurrenceID, "phytoplankton"))
+
+phytoplankton <- plankton %>%
+  select(occurrenceID, organismQuantityType, scientificName, individualCount) %>%
+  separate(col = occurrenceID, into = c("Location", "Site", "Date", "Benthic", "Species"), sep = ":") %>%
+  select(Site, Species, organismQuantityType, individualCount)
+
+ggplot(phytoplankton, aes(x=as.factor(Site), fill=as.factor(Species) )) + 
+    geom_bar( ) + theme_classic() +
+    theme(legend.position="none") + labs(y = "Site", x = "Species Count", title = "Phytoplankton species count across sites" ) + coord_flip() 
+
+phytoplanktonNew <- phytoplankton %>%
+  select(Site,Species,individualCount) %>%
+  group_by(Species, Site)
+
+planktonwide <- phytoplanktonNew %>% pivot_wider(names_from = Species, values_from = individualCount, Site)
+
+planktonwide[planktonwide == "NULL"] <- NA
+
 
 ```
+
+
+```{r}
+library(readxl)
+library(vegan)
+Diversity <- read_excel("D:/kaya/Documents/2 SY 2021-2022/1st Semester 2021-2022/Bio 115 - Field Biology/Laboratory/Wk 3/FieldBio_Act4/Diversity.xlsx", 
+    sheet = "Sheet2")
+
+diversity_results <- diversity(x = Diversity,index = "shannon")
+spa <- specaccum(Diversity)
+plot(spa)
+```
+
 
